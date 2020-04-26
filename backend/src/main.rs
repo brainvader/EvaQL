@@ -3,6 +3,8 @@ use actix_web::{get, post, web, App, Error, HttpResponse, HttpServer};
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
 
+mod schema;
+
 #[get("/graphiql")]
 async fn graphiql() -> HttpResponse {
     let html = graphiql_source("http://127.0.0.1:8080/graphql");
