@@ -63,3 +63,8 @@ description = "Build in watch mode while serving file"
 run_task = [
     { name = ["watch", "serve"], parallel = true }
 ]
+
+[tasks.npm]
+script = [
+    "npm install tailwindcss"
+]
