@@ -23,9 +23,25 @@ fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
 }
 
 fn view(model: &Model) -> impl View<Msg> {
-    button![
-        simple_ev(Ev::Click, Msg::Increment),
-        format!("Hello, World × {}", model.counter)
+    let button_class = class!["bg-gray-400", "px-8", "py-4"];
+    div![
+        class![
+            "flex",
+            "flex-col",
+            "justify-center",
+            "items-center",
+            "h-screen",
+            "text-gray-600"
+        ],
+        button![
+            button_class,
+            simple_ev(Ev::Click, Msg::Increment),
+            format!("Click Me!")
+        ],
+        div![
+            class!["w-56", "text-center", "mt-2"],
+            format!("Click {} times", model.counter)
+        ]
     ]
 }
 
