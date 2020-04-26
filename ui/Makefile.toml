@@ -68,3 +68,8 @@ run_task = [
 script = [
     "npm install tailwindcss"
 ]
+
+[tasks.tailwind]
+script = [
+    "npx tailwind build ./css/style.css -o ./public/css/style.css",
+]
