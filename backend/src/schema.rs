@@ -1,5 +1,5 @@
-use juniper::FieldResult;
 use juniper::ID;
+use juniper::{FieldResult, RootNode};
 use juniper::{GraphQLEnum, GraphQLInputObject, GraphQLObject};
 
 #[derive(GraphQLEnum)]
@@ -57,4 +57,10 @@ impl MutationRoot {
             appears_in: vec![Episode::Jo, Episode::Ha, Episode::Q],
         })
     }
+}
+
+pub type Schema = RootNode<'static, QueryRoot, MutationRoot>;
+
+pub fn create_schema() -> Schema {
+    Schema::new(QueryRoot {}, MutationRoot {})
 }
