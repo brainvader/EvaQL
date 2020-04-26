@@ -55,7 +55,10 @@ description = "Start server"
 install_crate = { crate_name = "microserver", binary = "microserver", test_arg = "-h" }
 # workspace = false
 command = "microserver"
-args = ["--port", "${PORT}"]
+args = [
+    "--port", "${PORT}",
+    "./public"
+]
 
 # ---- START BUILD PROCESS & SERVING PRODUCT ----
 
