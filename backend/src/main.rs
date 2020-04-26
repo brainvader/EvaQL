@@ -1,5 +1,7 @@
-use actix_web::{get, App, HttpResponse, HttpServer};
+use actix_web::{get, post, web, App, Error, HttpResponse, HttpServer};
+
 use juniper::http::graphiql::graphiql_source;
+use juniper::http::GraphQLRequest;
 
 #[get("/graphiql")]
 async fn graphiql() -> HttpResponse {
@@ -7,6 +9,22 @@ async fn graphiql() -> HttpResponse {
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(html)
+}
+
+#[post("/graphql")]
+async fn graphql(
+    st: web::Data<std::sync::Arc<Schema>>,
+    data: web::Json<GraphQLRequest>,
+) -> Result<HttpResponse, Error> {
+    let user = web::block(move || {
+        let res = data.execute(&st, &());
+        Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
+    })
+    .await?;
+
+    let builder = HttpResponse::Ok();
+    let response = builder.content_type("application/json").body(user);
+    Ok(response)
 }
 
 #[actix_rt::main]
