@@ -1,0 +1,84 @@
+# ---- ENVIRONMENTAL VARS ----
+[env]
+# all workspace members can use this Makefile
+# CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = "true"
+PORT = "8000"
+
+# ---- COMPILE PACKAGE----
+
+[tasks.compile]
+description = "Build"
+# workspace = false
+command = "cargo"
+args = ["build"]
+
+
+[tasks.compile_release]
+description = "Release Build "
+extend = "compile"
+args = ["build", "--release"]
+
+
+# ---- BUILD WASM ----
+
+[tasks.build_wasm]
+description = "Build with wasm-pack"
+install_crate = { crate_name = "wasm-pack", binary = "wasm-pack", test_arg = "-V", min_version = "0.8.0" }
+command = "wasm-pack"
+args = [
+    "build",
+    "--target", "web",
+    "--out-name", "package",
+    "--dev",
+    "--out-dir", "public/pkg"
+]
+
+# ---- COMPILE & BUILD WASM ---- 
+
+[tasks.build]
+description = "Build, and create wasms"
+workspace = false
+dependencies = ["compile", "build_wasm"]
+
+# ---- WATCH FILE CHANGES ----
+
+[tasks.watch]
+description = "Start building project in watch mode"
+# workspace = false
+dependencies = ["build", "build_wasm"]
+watch = { ignore_pattern="pkg/*" }
+
+# ---- SERVE PRODUCT ----
+
+[tasks.serve]
+description = "Start server"
+install_crate = { crate_name = "microserver", binary = "microserver", test_arg = "-h" }
+# workspace = false
+command = "microserver"
+args = [
+    "--port", "${PORT}",
+    "./public"
+]
+
+# ---- START BUILD PROCESS & SERVING PRODUCT ----
+
+[tasks.start]
+description = "Combine the build and serve tasks"
+# workspace = false
+dependencies = ["build", "serve"]
+
+[tasks.dev]
+description = "Build in watch mode while serving file"
+run_task = [
+    { name = ["watch", "serve"], parallel = true }
+]
+
+[tasks.npm]
+script = [
+    "npm install tailwindcss"
+]
+
+[tasks.tailwind]
+script = [
+    "npx tailwind build ./css/style.css -o ./public/css/style.css",
+]
