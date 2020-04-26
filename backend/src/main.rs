@@ -39,7 +39,12 @@ async fn main() -> std::io::Result<()> {
 
     let schema = std::sync::Arc::new(create_schema());
 
-    let app_factory = move || App::new().data(schema.clone()).service(graphiql);
+    let app_factory = move || {
+        App::new()
+            .data(schema.clone())
+            .service(graphiql)
+            .service(graphql)
+    };
 
     let server = HttpServer::new(app_factory);
     server.bind(addr)?.run().await
