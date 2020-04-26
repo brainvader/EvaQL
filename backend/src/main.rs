@@ -4,6 +4,7 @@ use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
 
 mod schema;
+use crate::schema::{create_schema, Schema};
 
 #[get("/graphiql")]
 async fn graphiql() -> HttpResponse {
@@ -36,7 +37,9 @@ async fn main() -> std::io::Result<()> {
     let port = 8080;
     let addr = std::net::SocketAddr::new(ip, port);
 
-    let app_factory = || App::new().service(graphiql);
+    let schema = std::sync::Arc::new(create_schema());
+
+    let app_factory = move || App::new().data(schema.clone()).service(graphiql);
 
     let server = HttpServer::new(app_factory);
     server.bind(addr)?.run().await
