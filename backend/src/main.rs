@@ -25,7 +25,7 @@ async fn graphql(
     })
     .await?;
 
-    let builder = HttpResponse::Ok();
+    let mut builder = HttpResponse::Ok();
     let response = builder.content_type("application/json").body(user);
     Ok(response)
 }
