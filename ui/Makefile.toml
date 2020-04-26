@@ -57,3 +57,9 @@ args = ["--port", "${PORT}"]
 description = "Combine the build and serve tasks"
 # workspace = false
 dependencies = ["build", "serve"]
+
+[tasks.dev]
+description = "Build in watch mode while serving file"
+run_task = [
+    { name = ["watch", "serve"], parallel = true }
+]
