@@ -1,4 +1,5 @@
 use actix_web::{get, post, web, App, Error, HttpResponse, HttpServer};
+use listenfd::ListenFd;
 
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
@@ -46,6 +47,13 @@ async fn main() -> std::io::Result<()> {
             .service(graphql)
     };
 
-    let server = HttpServer::new(app_factory);
-    server.bind(addr)?.run().await
+    let mut server = HttpServer::new(app_factory);
+    let mut listenfd = ListenFd::from_env();
+
+    server = if let Some(l) = listenfd.take_tcp_listener(0)? {
+        server.listen(l)?
+    } else {
+        server.bind(addr)?
+    };
+    server.run().await
 }
