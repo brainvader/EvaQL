@@ -6,6 +6,7 @@ use juniper::http::GraphQLRequest;
 
 mod schema;
 use crate::schema::{create_schema, Schema};
+use crate::schema::{Episode, EvaContext, Human};
 
 #[get("/graphiql")]
 async fn graphiql() -> HttpResponse {
@@ -17,11 +18,14 @@ async fn graphiql() -> HttpResponse {
 
 #[post("/graphql")]
 async fn graphql(
+    state: web::Data<AppState>,
     st: web::Data<std::sync::Arc<Schema>>,
     data: web::Json<GraphQLRequest>,
 ) -> Result<HttpResponse, Error> {
+    let my_state = state.get_ref();
+    let context = my_state.eva_context.to_owned();
     let user = web::block(move || {
-        let res = data.execute(&st, &());
+        let res = data.execute(&st, &context);
         Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
     })
     .await?;
@@ -39,6 +43,11 @@ fn graphql_endpoints(config: &mut web::ServiceConfig) {
     config.data(schema).service(graphql).service(graphiql);
 }
 
+#[derive(Clone)]
+struct AppState {
+    eva_context: EvaContext,
+}
+
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     let localhost = std::net::Ipv4Addr::new(127, 0, 0, 1);
@@ -46,7 +55,25 @@ async fn main() -> std::io::Result<()> {
     let port = 8080;
     let addr = std::net::SocketAddr::new(ip, port);
 
-    let app_factory = move || App::new().configure(graphql_endpoints);
+    let ikari_shinji = Human {
+        id: juniper::ID::from("1".to_owned()),
+        name: "Ikari Shinji".to_owned(),
+        appears_in: vec![Episode::Jo, Episode::Ha, Episode::Q],
+    };
+
+    let context = EvaContext {
+        human: ikari_shinji,
+    };
+
+    let app_state = AppState {
+        eva_context: context,
+    };
+
+    let app_factory = move || {
+        App::new()
+            .data(app_state.clone())
+            .configure(graphql_endpoints)
+    };
 
     let mut server = HttpServer::new(app_factory);
     let mut listenfd = ListenFd::from_env();
