@@ -1,0 +1,8 @@
+[tasks.start_dev]
+description = "Run serve in development mode"
+command = "systemfd"
+args = [
+    "--no-pid",
+    "-s", "http::8080",
+    "--", "cargo", "watch", "-x", "run"
+]
