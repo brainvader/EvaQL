@@ -30,11 +30,6 @@ async fn graphql(
     })
     .await?;
 
-    if log::log_enabled!(log::Level::Info) {
-        let x = 3 * 4; // expensive computation
-        log::info!("the answer was: {}", x);
-    }
-
     let mut builder = HttpResponse::Ok();
     let response = builder.content_type("application/json").body(user);
     Ok(response)
@@ -63,7 +58,16 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let mut bayard = std::process::Command::new("bayard");
-    let output = bayard.arg("--version").output()?;
+    let child = bayard
+        .arg("start")
+        .arg("--host=127.0.0.1")
+        .arg("--index-port=5000")
+        .arg("--schema-file=./db/schema.json")
+        .arg("--tokenizer-file=./db/tokenizer.json")
+        .arg("1")
+        .spawn()?;
+
+    log::info!("child id: {}", child.id());
 
     let ikari_shinji = Human {
         id: juniper::ID::from("1".to_owned()),
@@ -87,9 +91,6 @@ async fn main() -> std::io::Result<()> {
     };
 
     let mut server = HttpServer::new(app_factory);
-    let output_literal = String::from_utf8(output.stdout).unwrap();
-    log::info!("bayard version: {}", output_literal);
-
     let mut listenfd = ListenFd::from_env();
 
     server = if let Some(l) = listenfd.take_tcp_listener(0)? {
@@ -97,5 +98,6 @@ async fn main() -> std::io::Result<()> {
     } else {
         server.bind(addr)?
     };
+
     server.run().await
 }
