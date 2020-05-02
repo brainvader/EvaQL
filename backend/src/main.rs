@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{get, middleware, post, web, App, Error, HttpResponse, HttpServer};
 use listenfd::ListenFd;
 
 use juniper::http::graphiql::graphiql_source;
@@ -30,6 +30,17 @@ async fn graphql(
     })
     .await?;
 
+    if log::log_enabled!(log::Level::Info) {
+        let mut bayard = std::process::Command::new("bayard");
+        let output = bayard
+            .arg("status")
+            .arg("--server=127.0.0.1:5000")
+            .output()?;
+        let output_literal = String::from_utf8(output.stdout).unwrap();
+        // TODO: Serialize output_literal with serde_json
+        log::info!("status: {}", output_literal);
+    }
+
     let mut builder = HttpResponse::Ok();
     let response = builder.content_type("application/json").body(user);
     Ok(response)
@@ -55,6 +66,20 @@ async fn main() -> std::io::Result<()> {
     let port = 8080;
     let addr = std::net::SocketAddr::new(ip, port);
 
+    env_logger::init();
+
+    let mut bayard = std::process::Command::new("bayard");
+    let child = bayard
+        .arg("start")
+        .arg("--host=127.0.0.1")
+        .arg("--index-port=5000")
+        .arg("--schema-file=./db/schema.json")
+        .arg("--tokenizer-file=./db/tokenizer.json")
+        .arg("1")
+        .spawn()?;
+
+    log::info!("child id: {}", child.id());
+
     let ikari_shinji = Human {
         id: juniper::ID::from("1".to_owned()),
         name: "Ikari Shinji".to_owned(),
@@ -72,6 +97,7 @@ async fn main() -> std::io::Result<()> {
     let app_factory = move || {
         App::new()
             .data(app_state.clone())
+            .wrap(middleware::Logger::default())
             .configure(graphql_endpoints)
     };
 
@@ -83,5 +109,6 @@ async fn main() -> std::io::Result<()> {
     } else {
         server.bind(addr)?
     };
+
     server.run().await
 }

@@ -1,3 +1,19 @@
+[env]
+RUST_LOG = "actix_web=info,info"
+RUST_BACKTRACE = "1"
+
+[tasks.bayard]
+description = "Start bayard with given ID"
+command = "bayard"
+args = [
+    "start",
+    "--host=0.0.0.0",
+    "--index-port=5000",
+    "--schema-file=./db/schema.json",
+    "--tokenizer-file=./db/tokenizer.json",
+    "1"
+]
+
 [tasks.start_dev]
 description = "Run serve in development mode"
 command = "systemfd"
@@ -6,3 +22,4 @@ args = [
     "-s", "http::8080",
     "--", "cargo", "watch", "-x", "run"
 ]
+dependencies = ["bayard"]
