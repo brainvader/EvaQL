@@ -30,6 +30,17 @@ async fn graphql(
     })
     .await?;
 
+    if log::log_enabled!(log::Level::Info) {
+        let mut bayard = std::process::Command::new("bayard");
+        let output = bayard
+            .arg("status")
+            .arg("--server=127.0.0.1:5000")
+            .output()?;
+        let output_literal = String::from_utf8(output.stdout).unwrap();
+        // TODO: Serialize output_literal with serde_json
+        log::info!("status: {}", output_literal);
+    }
+
     let mut builder = HttpResponse::Ok();
     let response = builder.content_type("application/json").body(user);
     Ok(response)
