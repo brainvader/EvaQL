@@ -20,6 +20,8 @@ fn get_status() -> () {
     log::info!("status: {}", output.status);
     log::info!("outpu: {}", output_string);
     // TODO: Serialize output_literal with serde_json
+    let output_json: serde_json::Value = serde_json::from_str(&output_string).unwrap();
+    log::info!("status: {}", output_json["status"]);
 }
 
 #[get("/graphiql")]
