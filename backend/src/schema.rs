@@ -40,11 +40,42 @@ pub struct EvaContext {
 
 impl juniper::Context for EvaContext {}
 
+fn load_env_file() {
+    let env_file = dotenv::dotenv().unwrap();
+    match env_file.to_str() {
+        Some(path_name) => log::info!("path name: {}", path_name),
+        None => log::info!("No .env file"),
+    }
+}
+
+fn get_server_address() -> (std::string::String, std::string::String) {
+    load_env_file();
+    let host = std::env::var("BAYARD_HOST").unwrap();
+    let port = std::env::var("BAYARD_PORT").unwrap();
+    (host, port)
+}
+
+// JSON Processor function
+fn jq(output: &str) -> serde_json::Value {
+    serde_json::from_str(output).unwrap()
+}
+
 pub struct QueryRoot;
 
 #[juniper::object(Context = EvaContext)]
 impl QueryRoot {
     fn human(context: &EvaContext) -> FieldResult<Human> {
+        let (host, port) = get_server_address();
+        log::info!("BAYARD_URL: {}:{}", host, port);
+        let server_option = format!("--server={}:{}", host, port);
+        let mut output = std::process::Command::new("bayard")
+            .arg("get")
+            .arg(server_option)
+            .arg("1")
+            .output()?;
+        let output_string = String::from_utf8(output.stdout).unwrap();
+        let output_json = jq(&output_string);
+        log::info!("get: {:?}", output_json["appears_in"]);
         let Human {
             id,
             name,
