@@ -105,14 +105,14 @@ pub struct QueryRoot;
 
 #[juniper::object(Context = EvaContext)]
 impl QueryRoot {
-    fn human(context: &EvaContext) -> FieldResult<Human> {
+    fn human(id: String) -> FieldResult<Human> {
         let (host, port) = get_server_address();
         log::info!("BAYARD_URL: {}:{}", host, port);
         let server_option = format!("--server={}:{}", host, port);
         let mut output = std::process::Command::new("bayard")
             .arg("get")
             .arg(server_option)
-            .arg("1")
+            .arg(id)
             .output()?;
         let output_string = String::from_utf8(output.stdout).unwrap();
         log::info!("output_string: {:?}", output_string);
