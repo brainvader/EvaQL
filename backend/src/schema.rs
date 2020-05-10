@@ -122,7 +122,7 @@ impl QueryRoot {
             id,
             name,
             appears_in,
-        } = &context.human;
+        } = &output_json;
         Ok(Human {
             id: id.to_owned(),
             name: name.to_string(),
