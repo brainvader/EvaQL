@@ -8,6 +8,22 @@ mod schema;
 use crate::schema::{create_schema, Schema};
 use crate::schema::{Episode, EvaContext, Human};
 
+fn get_status() -> () {
+    let mut bayard = std::process::Command::new("bayard");
+    let output = bayard
+        .arg("status")
+        .arg("--server=127.0.0.1:5000")
+        .output()
+        .unwrap();
+
+    let output_string = String::from_utf8(output.stdout).unwrap();
+    log::info!("status: {}", output.status);
+    log::info!("outpu: {}", output_string);
+    // TODO: Serialize output_literal with serde_json
+    let output_json: serde_json::Value = serde_json::from_str(&output_string).unwrap();
+    log::info!("status: {}", output_json["status"]);
+}
+
 #[get("/graphiql")]
 async fn graphiql() -> HttpResponse {
     let html = graphiql_source("http://127.0.0.1:8080/graphql");
@@ -22,6 +38,8 @@ async fn graphql(
     st: web::Data<std::sync::Arc<Schema>>,
     data: web::Json<GraphQLRequest>,
 ) -> Result<HttpResponse, Error> {
+    get_status();
+
     let my_state = state.get_ref();
     let context = my_state.eva_context.to_owned();
     let user = web::block(move || {
@@ -29,17 +47,6 @@ async fn graphql(
         Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
     })
     .await?;
-
-    if log::log_enabled!(log::Level::Info) {
-        let mut bayard = std::process::Command::new("bayard");
-        let output = bayard
-            .arg("status")
-            .arg("--server=127.0.0.1:5000")
-            .output()?;
-        let output_literal = String::from_utf8(output.stdout).unwrap();
-        // TODO: Serialize output_literal with serde_json
-        log::info!("status: {}", output_literal);
-    }
 
     let mut builder = HttpResponse::Ok();
     let response = builder.content_type("application/json").body(user);
