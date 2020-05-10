@@ -16,6 +16,12 @@ args = [
     "1"
 ]
 
+[tasks.bayard_schema]
+description = "Get schema"
+script = [
+    "bayard schema --server=${BAYARD_HOST}:${BAYARD_PORT} | jq"
+]
+
 [tasks.start_dev]
 description = "Run serve in development mode"
 command = "systemfd"
