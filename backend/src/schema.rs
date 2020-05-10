@@ -1,17 +1,22 @@
 use juniper::ID;
 use juniper::{FieldResult, RootNode};
 use juniper::{GraphQLEnum, GraphQLInputObject, GraphQLObject};
+use serde::Deserialize;
 
-#[derive(GraphQLEnum, Clone)]
+#[derive(GraphQLEnum, Clone, Deserialize, Debug)]
 pub enum Episode {
+    #[serde(alias = "/episode/Jo")]
     Jo,
+    #[serde(alias = "/episode/Ha")]
     Ha,
+    #[serde(alias = "/episode/Q")]
     Q,
 }
 
-#[derive(GraphQLObject, Clone)]
+#[derive(GraphQLObject, Clone, Deserialize, Debug)]
 #[graphql(description = "A human being in the Rebuild of Evangelion")]
 pub struct Human {
+    #[serde(alias = "_id")]
     pub id: ID,
     pub name: String,
     pub appears_in: Vec<Episode>,
@@ -74,8 +79,9 @@ impl QueryRoot {
             .arg("1")
             .output()?;
         let output_string = String::from_utf8(output.stdout).unwrap();
-        let output_json = jq(&output_string);
-        log::info!("get: {:?}", output_json["appears_in"]);
+        log::info!("output_string: {:?}", output_string);
+        let output_json: Human = serde_json::from_str(&output_string).unwrap();
+        log::info!("out_json: {:?}", output_json);
         let Human {
             id,
             name,
