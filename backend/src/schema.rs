@@ -1,5 +1,5 @@
 use juniper::ID;
-use juniper::{FieldResult, RootNode};
+use juniper::{graphql_value, FieldResult, RootNode};
 use juniper::{GraphQLEnum, GraphQLInputObject, GraphQLObject};
 use serde::{de, Deserialize};
 
@@ -101,11 +101,28 @@ fn jq(output: &str) -> serde_json::Value {
     serde_json::from_str(output).unwrap()
 }
 
+enum BayardError {
+    DocumentNotFound,
+}
+
+impl juniper::IntoFieldError for BayardError {
+    fn into_field_error(self) -> juniper::FieldError {
+        match self {
+            BayardError::DocumentNotFound => juniper::FieldError::new(
+                "Could not found document with given id",
+                graphql_value!({
+                    "type": "NO_DOCUMENT"
+                }),
+            ),
+        }
+    }
+}
+
 pub struct QueryRoot;
 
 #[juniper::object(Context = EvaContext)]
 impl QueryRoot {
-    fn human(id: String) -> FieldResult<Human> {
+    fn human(id: String) -> Result<Human, BayardError> {
         let (host, port) = get_server_address();
         log::info!("BAYARD_URL: {}:{}", host, port);
         let server_option = format!("--server={}:{}", host, port);
@@ -113,21 +130,25 @@ impl QueryRoot {
             .arg("get")
             .arg(server_option)
             .arg(id)
-            .output()?;
-        let output_string = String::from_utf8(output.stdout).unwrap();
-        log::info!("output_string: {:?}", output_string);
-        let output_json: Human = serde_json::from_str(&output_string).unwrap();
-        log::info!("out_json: {:?}", output_json);
-        let Human {
-            id,
-            name,
-            appears_in,
-        } = &output_json;
-        Ok(Human {
-            id: id.to_owned(),
-            name: name.to_string(),
-            appears_in: appears_in.to_vec(),
-        })
+            .output()
+            .unwrap();
+        if output.status.success() {
+            let output_string = String::from_utf8(output.stdout).unwrap();
+            log::info!("output_string: {:?}", output_string);
+            let output_json: Human = serde_json::from_str(&output_string).unwrap();
+            log::info!("out_json: {:?}", output_json);
+            let Human {
+                id,
+                name,
+                appears_in,
+            } = &output_json;
+            return Ok(Human {
+                id: id.to_owned(),
+                name: name.to_string(),
+                appears_in: appears_in.to_vec(),
+            });
+        }
+        Err(BayardError::DocumentNotFound)
         // Ok(Human {
         //     id: ID::from("1".to_owned()),
         //     name: "Shinji Ikari".to_owned(),
