@@ -157,16 +157,25 @@ impl QueryRoot {
     }
 }
 
+#[derive(GraphQLInputObject)]
+struct NewHuman {
+    id: ID,
+    name: String,
+    appears_in: Vec<Episode>,
+}
+
 pub struct MutationRoot;
 
 #[juniper::object(Context = EvaContext)]
 impl MutationRoot {
-    fn createHuman(id: ID) -> FieldResult<Human> {
-        Ok(Human {
-            id: ID::from("1".to_owned()),
-            name: "Shinji Ikari".to_owned(),
-            appears_in: vec![Episode::Jo, Episode::Ha, Episode::Q],
-        })
+    fn createHuman(new_human: NewHuman) -> FieldResult<Human> {
+        let human = Human {
+            id: ID::from(new_human.id.to_owned()),
+            name: new_human.name.to_owned(),
+            appears_in: new_human.appears_in.clone(),
+        };
+        log::info!("{:?}", human);
+        Ok(human)
     }
 }
 
